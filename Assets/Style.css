@@ -1,3 +1,17 @@
 ﻿body {
     font-family: "Segoe UI";
 }
+table {
+    border-collapse: collapse;
+    border: 2px solid #ccc;
+}
+th {
+    background: #ccc;
+    padding: 4px;
+}
+td {
+    border-left: 2px solid #ccc;
+}
+td:first-child {
+    border-left: none;
+}

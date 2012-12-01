@@ -14,11 +14,12 @@
     </Page.Resources>
 
     <common:LayoutAwarePage.BottomAppBar>
-        <AppBar>
+        <AppBar Opened="AppBar_Opened_1">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Style="{StaticResource AddAppBarButtonStyle}" AutomationProperties.Name="New Note" Click="NewFile"/>
                 <Button Style="{StaticResource ListAppBarButtonStyle}" AutomationProperties.Name="Browse Notes" Click="OpenFile"/>
                 <Button Style="{StaticResource EditAppBarButtonStyle}" AutomationProperties.Name="Rename" Click="RenameFile"/>
+                <Button Style="{StaticResource HelpAppBarButtonStyle}" Click="HelpFile"/>
             </StackPanel>
         </AppBar>
     </common:LayoutAwarePage.BottomAppBar>
@@ -38,9 +39,11 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Button x:Name="backButton" Click="GoBack" IsEnabled="{Binding Frame.CanGoBack, ElementName=pageRoot}" Style="{StaticResource BackButtonStyle}"/>
             <TextBlock x:Name="pageTitle" Grid.Column="1" Text="{StaticResource AppName}" Style="{StaticResource PageHeaderTextStyle}"/>
+            <TextBlock x:Name="pageSubtitle" Grid.Column="2" TextWrapping="Wrap" Style="{StaticResource PageSubheaderTextStyle}"/>
         </Grid>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>

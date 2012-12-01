@@ -27,7 +27,7 @@ namespace NerdNote
     public sealed partial class EditorPage : NerdNote.Common.LayoutAwarePage
     {
         private StorageFile file;
-        private StorageFile tempFile;
+        private bool readOnly = true;
         private DispatcherTimer refreshTimer = new DispatcherTimer();
         private Markdown md = new Markdown();
         private WebViewBrush webBrush;
@@ -36,6 +36,8 @@ namespace NerdNote
         public EditorPage()
         {
             this.InitializeComponent();
+            md.ExtraMode = true;
+            md.NewWindowForExternalLinks = true;
             refreshTimer.Tick += new System.EventHandler<object>(this.OnTick);
             refreshTimer.Interval = new TimeSpan(0, 0, 0, 0, 500);
         }
@@ -54,11 +56,16 @@ namespace NerdNote
         {
             if (ApplicationData.Current.LocalSettings.Values.ContainsKey("MRUToken"))
             {
-                LoadFile(await Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.GetFileAsync(ApplicationData.Current.LocalSettings.Values["MRUToken"].ToString()));
+                bool readOnly = false;
+                if (ApplicationData.Current.LocalSettings.Values.ContainsKey("ReadOnly") && (bool)ApplicationData.Current.LocalSettings.Values["ReadOnly"])
+                    readOnly = true;
+                LoadFile(await Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.GetFileAsync(
+                    ApplicationData.Current.LocalSettings.Values["MRUToken"].ToString()),
+                    readOnly);
             }
             else
             {
-                LoadFile(new Uri("ms-appx:///Help/Sample.md"));
+                HelpFile(null, null);
             }
         }
 
@@ -72,12 +79,15 @@ namespace NerdNote
         {
         }
 
-        private async void LoadFile(StorageFile file)
+        private async void LoadFile(StorageFile file, bool readOnly=false)
         {
             try
             {
                 ApplicationData.Current.LocalSettings.Values["MRUToken"] = Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.Add(file);
+                ApplicationData.Current.LocalSettings.Values["ReadOnly"] = readOnly;
                 this.file = file;
+                this.readOnly = readOnly;
+                pageSubtitle.Text = (readOnly ? file.Name + " (Not Saved)" : file.Name);
                 string src = await FileIO.ReadTextAsync(file);
                 editorBox.Text = src;
                 CompileNote();
@@ -85,30 +95,26 @@ namespace NerdNote
             catch (Exception e)
             {
                 file = null;
+                pageSubtitle.Text = "Error";
                 editorBox.Text = "An error occured loading this file.";
                 CompileNote();
             }
         }
 
-        private async void LoadFile(Uri uri)
+        private async void LoadFile(Uri uri, bool readOnly=false)
         {
-            LoadFile(await StorageFile.GetFileFromApplicationUriAsync(uri));
+            LoadFile(await StorageFile.GetFileFromApplicationUriAsync(uri), readOnly);
         }
 
-        private async void LoadFile(string str)
+        private async void LoadFile(string str, bool readOnly=false)
         {
-            LoadFile(new Uri(str));
+            LoadFile(new Uri(str), readOnly);
         }
 
         private async void CompileNote()
         {
-            /*if (tempFile == null)
-                tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);*/
-
             html = "<html><head><link href=\"ms-appx-web:///Assets/Style.css\" rel=\"stylesheet\" type=\"text/css\"/></head>" +
                 "<body>" + md.Transform(editorBox.Text.ToString()) + "</body></html>";
-
-            //await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
 
             outputBox.Visibility = Visibility.Visible;
             outputBox.NavigateToString(html);
@@ -124,14 +130,17 @@ namespace NerdNote
         private async void OnTick(object sender, object e)
         {
             refreshTimer.Stop();
-            try
+            if (!this.readOnly)
             {
-                await FileIO.WriteTextAsync(file, editorBox.Text.ToString());
-            }
-            catch (System.UnauthorizedAccessException ex)
-            {
-                //do something about it
-                return;
+                try
+                {
+                    await FileIO.WriteTextAsync(file, editorBox.Text.ToString());
+                }
+                catch (System.UnauthorizedAccessException ex)
+                {
+                    //do something about it
+                    pageSubtitle.Text = file.Name + " (Not Saved)";
+                }
             }
             CompileNote();
         }
@@ -214,12 +223,6 @@ namespace NerdNote
             if (file != null)
             {
                 LoadFile(file);
-                // Application now has read/write access to the picked file
-                ApplicationData.Current.LocalSettings.Values["MRUToken"] = Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.Add(file);
-                this.file = file;
-                string src = await FileIO.ReadTextAsync(file);
-                editorBox.Text = src;
-                CompileNote();
             }
             else
             {
@@ -229,6 +232,17 @@ namespace NerdNote
         private void RenameFile(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void HelpFile(object sender, RoutedEventArgs e)
+        {
+            CompileNote(); //save before opening next file
+            LoadFile("ms-appx:///Help/Help.md", true);
+        }
+
+        private void AppBar_Opened_1(object sender, object e)
+        {
+            ShowWebRect();
         }
     }
 }

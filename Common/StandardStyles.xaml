@@ -550,11 +550,13 @@
         <Setter Property="AutomationProperties.Name" Value="Search"/>
         <Setter Property="Content" Value="&#xE11A;"/>
     </Style>
+    -->
     <Style x:Key="HelpAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
         <Setter Property="AutomationProperties.AutomationId" Value="HelpAppBarButton"/>
         <Setter Property="AutomationProperties.Name" Value="Help"/>
         <Setter Property="Content" Value="&#xE11B;"/>
     </Style>
+    <!--
     <Style x:Key="UploadAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
         <Setter Property="AutomationProperties.AutomationId" Value="UploadAppBarButton"/>
         <Setter Property="AutomationProperties.Name" Value="Upload"/>
