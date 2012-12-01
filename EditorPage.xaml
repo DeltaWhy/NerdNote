@@ -16,9 +16,9 @@
     <common:LayoutAwarePage.BottomAppBar>
         <AppBar>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Style="{StaticResource AddAppBarButtonStyle}" AutomationProperties.Name="New Note"/>
-                <Button Style="{StaticResource ListAppBarButtonStyle}" AutomationProperties.Name="Browse Notes"/>
-                <Button Style="{StaticResource EditAppBarButtonStyle}" AutomationProperties.Name="Rename"/>
+                <Button Style="{StaticResource AddAppBarButtonStyle}" AutomationProperties.Name="New Note" Click="NewFile"/>
+                <Button Style="{StaticResource ListAppBarButtonStyle}" AutomationProperties.Name="Browse Notes" Click="OpenFile"/>
+                <Button Style="{StaticResource EditAppBarButtonStyle}" AutomationProperties.Name="Rename" Click="RenameFile"/>
             </StackPanel>
         </AppBar>
     </common:LayoutAwarePage.BottomAppBar>

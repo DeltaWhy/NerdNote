@@ -26,6 +26,8 @@
             <EditFlags OpenIsSafe="true" />
             <SupportedFileTypes>
               <FileType ContentType="text/x-markdown">.md</FileType>
+              <FileType ContentType="text/x-markdown">.mkd</FileType>
+              <FileType ContentType="text/x-markdown">.markdown</FileType>
             </SupportedFileTypes>
           </FileTypeAssociation>
         </Extension>
@@ -33,6 +35,8 @@
           <FileOpenPicker>
             <SupportedFileTypes>
               <FileType>.md</FileType>
+              <FileType>.mkd</FileType>
+              <FileType>.markdown</FileType>
             </SupportedFileTypes>
           </FileOpenPicker>
         </Extension>
@@ -40,6 +44,8 @@
           <FileSavePicker>
             <SupportedFileTypes>
               <FileType>.md</FileType>
+              <FileType>.mkd</FileType>
+              <FileType>.markdown</FileType>
             </SupportedFileTypes>
           </FileSavePicker>
         </Extension>

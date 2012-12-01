@@ -12,6 +12,8 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.UI.ViewManagement;
 using MarkdownDeep;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234237
@@ -23,7 +25,7 @@ namespace NerdNote
     /// </summary>
     public sealed partial class EditorPage : NerdNote.Common.LayoutAwarePage
     {
-        private string path;
+        private StorageFile file;
         private StorageFile tempFile;
         private DispatcherTimer refreshTimer = new DispatcherTimer();
         private Markdown md = new Markdown();
@@ -47,26 +49,16 @@ namespace NerdNote
         /// </param>
         /// <param name="pageState">A dictionary of state preserved by this page during an earlier
         /// session.  This will be null the first time a page is visited.</param>
-        protected override void LoadState(Object navigationParameter, Dictionary<String, Object> pageState)
+        protected async override void LoadState(Object navigationParameter, Dictionary<String, Object> pageState)
         {
-            if (ApplicationData.Current.LocalSettings.Values.ContainsKey("Path"))
+            if (ApplicationData.Current.LocalSettings.Values.ContainsKey("MRUToken"))
             {
-                LoadFile(ApplicationData.Current.LocalSettings.Values["Path"].ToString());
+                LoadFile(await Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.GetFileAsync(ApplicationData.Current.LocalSettings.Values["MRUToken"].ToString()));
             }
             else
             {
                 LoadFile(new Uri("ms-appx:///Help/Sample.md"));
             }
-            /*if (pageState == null)
-            {
-                editorBox.Text = "# First note\n\nWrite your first note here!";
-            }
-            else if (pageState.ContainsKey("NoteText"))
-            {
-                editorBox.Text = pageState["NoteText"].ToString();
-            }
-
-            refreshTimer.Start();*/
         }
 
         /// <summary>
@@ -77,14 +69,29 @@ namespace NerdNote
         /// <param name="pageState">An empty dictionary to be populated with serializable state.</param>
         protected override void SaveState(Dictionary<String, Object> pageState)
         {
-            ApplicationData.Current.LocalSettings.Values["Path"] = path;
+        }
+
+        private async void LoadFile(StorageFile file)
+        {
+            try
+            {
+                ApplicationData.Current.LocalSettings.Values["MRUToken"] = Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.Add(file);
+                this.file = file;
+                string src = await FileIO.ReadTextAsync(file);
+                editorBox.Text = src;
+                CompileNote();
+            }
+            catch (Exception e)
+            {
+                file = null;
+                editorBox.Text = "An error occured loading this file.";
+                CompileNote();
+            }
         }
 
         private async void LoadFile(Uri uri)
         {
-            string src = await FileIO.ReadTextAsync(await StorageFile.GetFileFromApplicationUriAsync(uri));
-            editorBox.Text = src;
-            CompileNote();
+            LoadFile(await StorageFile.GetFileFromApplicationUriAsync(uri));
         }
 
         private async void LoadFile(string str)
@@ -94,13 +101,13 @@ namespace NerdNote
 
         private async void CompileNote()
         {
-            if (tempFile == null)
-                tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);
+            /*if (tempFile == null)
+                tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);*/
 
             html = "<html><head><link href=\"ms-appx-web:///Assets/Style.css\" rel=\"stylesheet\" type=\"text/css\"/></head>" +
                 "<body>" + md.Transform(editorBox.Text.ToString()) + "</body></html>";
 
-            await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
+            //await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
 
             outputBox.Visibility = Visibility.Visible;
             outputBox.NavigateToString(html);
@@ -113,10 +120,19 @@ namespace NerdNote
             refreshTimer.Start();
         }
 
-        private void OnTick(object sender, object e)
+        private async void OnTick(object sender, object e)
         {
-            CompileNote();
             refreshTimer.Stop();
+            try
+            {
+                await FileIO.WriteTextAsync(file, editorBox.Text.ToString());
+            }
+            catch (System.UnauthorizedAccessException ex)
+            {
+                //do something about it
+                return;
+            }
+            CompileNote();
         }
 
         private void ShowWebRect()
@@ -139,6 +155,47 @@ namespace NerdNote
         private void outputRect_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
             ShowWebView();
+        }
+
+        private void NewFile(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private async void OpenFile(object sender, RoutedEventArgs e)
+        {
+            bool unsnapped = ((ApplicationView.Value != ApplicationViewState.Snapped) || ApplicationView.TryUnsnap());
+            if (!unsnapped)
+            {
+                return;
+            }
+
+            FileOpenPicker openPicker = new FileOpenPicker();
+            openPicker.ViewMode = PickerViewMode.List;
+            openPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            openPicker.FileTypeFilter.Add(".md");
+            openPicker.FileTypeFilter.Add(".mkd");
+            openPicker.FileTypeFilter.Add(".markdown");
+
+            StorageFile file = await openPicker.PickSingleFileAsync();
+            if (file != null)
+            {
+                LoadFile(file);
+                // Application now has read/write access to the picked file
+                ApplicationData.Current.LocalSettings.Values["MRUToken"] = Windows.Storage.AccessCache.StorageApplicationPermissions.MostRecentlyUsedList.Add(file);
+                this.file = file;
+                string src = await FileIO.ReadTextAsync(file);
+                editorBox.Text = src;
+                CompileNote();
+            }
+            else
+            {
+            }
+        }
+
+        private void RenameFile(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
