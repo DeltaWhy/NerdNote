@@ -38,8 +38,9 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="editorBox" TextWrapping="Wrap" AcceptsReturn="True" Style="{StaticResource MonospaceStyle}" BorderThickness="0" Background="#FFF2F2F2"/>
+            <TextBox x:Name="editorBox" TextWrapping="Wrap" AcceptsReturn="True" Style="{StaticResource MonospaceStyle}" BorderThickness="0" Background="#FFF2F2F2" TextChanged="editorBox_TextChanged"/>
             <WebView x:Name="outputBox" Grid.Column="1"/>
+            <Rectangle x:Name="outputRect" Grid.Column="1" PointerPressed="outputRect_PointerPressed"/>
         </Grid>
 
         <VisualStateManager.VisualStateGroups>

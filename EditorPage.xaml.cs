@@ -24,10 +24,18 @@ namespace NerdNote
     public sealed partial class EditorPage : NerdNote.Common.LayoutAwarePage
     {
         private StorageFile tempFile;
+        private DispatcherTimer refreshTimer = new DispatcherTimer();
+        private Markdown md = new Markdown();
+        private WebViewBrush webBrush;
+        private string html = "";
+        
         public EditorPage()
         {
             this.InitializeComponent();
+            refreshTimer.Tick += new System.EventHandler<object>(this.OnTick);
+            refreshTimer.Interval = new TimeSpan(0, 0, 0, 0, 500);
         }
+
 
         /// <summary>
         /// Populates the page with content passed during navigation.  Any saved state is also
@@ -44,8 +52,12 @@ namespace NerdNote
             {
                 editorBox.Text = "# First note\n\nWrite your first note here!";
             }
+            else if (pageState.ContainsKey("NoteText"))
+            {
+                editorBox.Text = pageState["NoteText"].ToString();
+            }
 
-            CompileNote();
+            refreshTimer.Start();
         }
 
         /// <summary>
@@ -56,19 +68,58 @@ namespace NerdNote
         /// <param name="pageState">An empty dictionary to be populated with serializable state.</param>
         protected override void SaveState(Dictionary<String, Object> pageState)
         {
+            if (pageState != null)
+            {
+                pageState["NoteText"] = editorBox.Text.ToString();
+            }
         }
 
         private async void CompileNote()
         {
-            /*if (tempFile == null)
-                tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);*/
+            if (tempFile == null)
+                tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);
 
-            Markdown md = new Markdown();
-            string html = md.Transform(editorBox.Text.ToString());
+            html = md.Transform(editorBox.Text.ToString());
 
-            //await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
+            await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
 
+            outputBox.Visibility = Visibility.Visible;
             outputBox.NavigateToString(html);
+            ShowWebRect();
+        }
+
+        private void editorBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            refreshTimer.Stop();
+            refreshTimer.Start();
+        }
+
+        private void OnTick(object sender, object e)
+        {
+            CompileNote();
+            refreshTimer.Stop();
+        }
+
+        private void ShowWebRect()
+        {
+            if (webBrush == null)
+            {
+                webBrush = new WebViewBrush();
+                webBrush.SetSource(outputBox);
+                outputRect.Fill = webBrush;
+            }
+            webBrush.Redraw();
+            outputBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowWebView()
+        {
+            outputBox.Visibility = Visibility.Visible;
+        }
+
+        private void outputRect_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            ShowWebView();
         }
     }
 }
