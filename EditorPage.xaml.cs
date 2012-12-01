@@ -11,6 +11,8 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Windows.Storage;
+using MarkdownDeep;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234237
 
@@ -21,6 +23,7 @@ namespace NerdNote
     /// </summary>
     public sealed partial class EditorPage : NerdNote.Common.LayoutAwarePage
     {
+        private StorageFile tempFile;
         public EditorPage()
         {
             this.InitializeComponent();
@@ -55,9 +58,17 @@ namespace NerdNote
         {
         }
 
-        protected void CompileNote()
+        private async void CompileNote()
         {
-            //TODO - parse Markdown and display in WebView
+            /*if (tempFile == null)
+                tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);*/
+
+            Markdown md = new Markdown();
+            string html = md.Transform(editorBox.Text.ToString());
+
+            //await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
+
+            outputBox.NavigateToString(html);
         }
     }
 }
