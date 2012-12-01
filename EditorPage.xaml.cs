@@ -23,6 +23,7 @@ namespace NerdNote
     /// </summary>
     public sealed partial class EditorPage : NerdNote.Common.LayoutAwarePage
     {
+        private string path;
         private StorageFile tempFile;
         private DispatcherTimer refreshTimer = new DispatcherTimer();
         private Markdown md = new Markdown();
@@ -48,7 +49,15 @@ namespace NerdNote
         /// session.  This will be null the first time a page is visited.</param>
         protected override void LoadState(Object navigationParameter, Dictionary<String, Object> pageState)
         {
-            if (pageState == null)
+            if (ApplicationData.Current.LocalSettings.Values.ContainsKey("Path"))
+            {
+                LoadFile(ApplicationData.Current.LocalSettings.Values["Path"].ToString());
+            }
+            else
+            {
+                LoadFile(new Uri("ms-appx:///Help/Sample.md"));
+            }
+            /*if (pageState == null)
             {
                 editorBox.Text = "# First note\n\nWrite your first note here!";
             }
@@ -57,7 +66,7 @@ namespace NerdNote
                 editorBox.Text = pageState["NoteText"].ToString();
             }
 
-            refreshTimer.Start();
+            refreshTimer.Start();*/
         }
 
         /// <summary>
@@ -68,10 +77,19 @@ namespace NerdNote
         /// <param name="pageState">An empty dictionary to be populated with serializable state.</param>
         protected override void SaveState(Dictionary<String, Object> pageState)
         {
-            if (pageState != null)
-            {
-                pageState["NoteText"] = editorBox.Text.ToString();
-            }
+            ApplicationData.Current.LocalSettings.Values["Path"] = path;
+        }
+
+        private async void LoadFile(Uri uri)
+        {
+            string src = await FileIO.ReadTextAsync(await StorageFile.GetFileFromApplicationUriAsync(uri));
+            editorBox.Text = src;
+            CompileNote();
+        }
+
+        private async void LoadFile(string str)
+        {
+            LoadFile(new Uri(str));
         }
 
         private async void CompileNote()
@@ -79,7 +97,8 @@ namespace NerdNote
             if (tempFile == null)
                 tempFile = await ApplicationData.Current.TemporaryFolder.CreateFileAsync("test.html", CreationCollisionOption.ReplaceExisting);
 
-            html = md.Transform(editorBox.Text.ToString());
+            html = "<html><head><link href=\"ms-appx-web:///Assets/Style.css\" rel=\"stylesheet\" type=\"text/css\"/></head>" +
+                "<body>" + md.Transform(editorBox.Text.ToString()) + "</body></html>";
 
             await FileIO.WriteTextAsync(tempFile, html, Windows.Storage.Streams.UnicodeEncoding.Utf8);
 

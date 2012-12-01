@@ -112,12 +112,17 @@
     <Compile Include="EditorPage.xaml.cs">
       <DependentUpon>EditorPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FolderView.xaml.cs">
+      <DependentUpon>FolderView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <Content Include="Assets\Style.css" />
+    <Content Include="Help\Sample.md" />
     <None Include="NerdNote_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +142,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="EditorPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FolderView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
